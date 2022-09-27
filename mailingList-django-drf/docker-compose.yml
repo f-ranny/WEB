@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  web:
+    build: ./stage
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./stage:/usr/src/app/
+    ports:
+      - 1337:8000
+    environment:
+      - DEBUG=1
+      - SECRET_KEY=django-insecure-p4)u+*c7dw*8^c-wva#kp^4hxi3&h@anhs^&t6ri@jamz2@ngi
+      - ACCESS_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2OTQ2OTUzNDMsImlzcyI6ImZhYnJpcXVlIiwibmFtZSI6IkZfcmFubnkifQ.h5I3-JEgEkSs0zqMk_7udCXzuTNCrKfwOjlOPhisJ_s
+      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+      - CELERY_BROKER=redis://redis:6379/0
+      - CELERY_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+
+  celery:
+    build: ./stage
+    command: celery --app=mailing_list worker --loglevel=info --logfile=logs/celery.log
+    volumes:
+      - ./stage:/usr/src/app
+    environment:
+      - DEBUG=1
+      - SECRET_KEY=django-insecure-p4)u+*c7dw*8^c-wva#kp^4hxi3&h@anhs^&t6ri@jamz2@ngi
+      - ACCESS_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2OTQ2OTUzNDMsImlzcyI6ImZhYnJpcXVlIiwibmFtZSI6IkZfcmFubnkifQ.h5I3-JEgEkSs0zqMk_7udCXzuTNCrKfwOjlOPhisJ_s
+      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+      - CELERY_BROKER=redis://redis:6379/0
+      - CELERY_BACKEND=redis://redis:6379/0
+    depends_on:
+      - web
+      - redis
+
+  redis:
+    image: redis:7-alpine
+
+  dashboard:
+    build: ./stage
+    command: celery flower -A mailling_list --port=5555 --broker=redis://redis:6379/0
+    ports:
+      - 5555:5555
+    environment:
+      - DEBUG=1
+      - SECRET_KEY=django-insecure-p4)u+*c7dw*8^c-wva#kp^4hxi3&h@anhs^&t6ri@jamz2@ngi
+      - ACCESS_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2OTQ2OTUzNDMsImlzcyI6ImZhYnJpcXVlIiwibmFtZSI6IkZfcmFubnkifQ.h5I3-JEgEkSs0zqMk_7udCXzuTNCrKfwOjlOPhisJ_s
+      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+      - CELERY_BROKER=redis://redis:6379/0
+      - CELERY_BACKEND=redis://redis:6379/0
+    depends_on:
+      - web
+      - redis
+      - celery
